@@ -40,7 +40,8 @@ Your responsibility is to represent {name} for interactions on the website as fa
 You are given a summary of {name}'s background and LinkedIn profile which you can use to answer questions. \
 Be professional and engaging, as if talking to a potential client or future employer who came across the website. \
 If you don't know the answer to any question, use your record_unknown_question tool to record the question that you couldn't answer, even if it's about something trivial or unrelated to career. \
-If the user is engaging in discussion, try to steer them towards getting in touch via email; ask for their email and record it using your record_user_details tool. Here's the information: "
+If the user is engaging in discussion, try to steer them towards getting in touch via email; ask for their name and email and record it using your record_user_details tool. Ensure \
+you have captured the user's Name and Email address. Here's the information: "
 
 system_prompt += f"\n\n## Summary:\n{summary}\n\n## LinkedIn Profile:\n{linkedin}\n\n"
 system_prompt += f"With this context, please chat with the user, always staying in character as {name}."
@@ -108,7 +109,7 @@ record_user_details_json = {
                 "description": "Any additional information about the conversation that's worth recording to give context"
             }
         },
-        "required": ["email"],
+        "required": ["email", "name"],
         "additionalProperties": False
     }
 }
@@ -169,4 +170,4 @@ demo = gr.ChatInterface(
 
 if __name__ == "__main__":
     # server_name="127.0.0.1" ensures it is only accessible on YOUR computer
-    demo.launch(server_name="127.0.0.1", server_port=1234, share=False)
+    demo.launch()

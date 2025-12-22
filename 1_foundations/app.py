@@ -1,5 +1,6 @@
 from dotenv import load_dotenv
 from openai import OpenAI
+from pathlib import Path
 import json
 import os
 import requests
@@ -21,7 +22,7 @@ def push(text):
 
 
 def record_user_details(email, name="Name not provided", notes="not provided"):
-    push(f"Recording {name} with email {email} and notes {notes}")
+    push(f"Recording {name} with email {email} and follwing notes: {notes}")
     return {"recorded": "ok"}
 
 def record_unknown_question(question):
@@ -48,7 +49,7 @@ record_user_details_json = {
                 "description": "Any additional information about the conversation that's worth recording to give context"
             }
         },
-        "required": ["email"],
+        "required": ["email", "name","notes"],
         "additionalProperties": False
     }
 }
@@ -74,17 +75,24 @@ tools = [{"type": "function", "function": record_user_details_json},
 
 
 class Me:
+    
+    
 
     def __init__(self):
+        
+        script_dir = Path(__file__).parent
+        pdf_path = script_dir / "me" / "Profile.pdf"
+        summary_path = script_dir / "me" / "ProfileSummary.txt"
+        
         self.openai = OpenAI()
-        self.name = "Ed Donner"
-        reader = PdfReader("me/linkedin.pdf")
+        self.name = "Ehsan Masnavi"
+        reader = PdfReader(pdf_path)
         self.linkedin = ""
         for page in reader.pages:
             text = page.extract_text()
             if text:
                 self.linkedin += text
-        with open("me/summary.txt", "r", encoding="utf-8") as f:
+        with open(summary_path, "r", encoding="utf-8") as f:
             self.summary = f.read()
 
 
@@ -106,7 +114,8 @@ Your responsibility is to represent {self.name} for interactions on the website 
 You are given a summary of {self.name}'s background and LinkedIn profile which you can use to answer questions. \
 Be professional and engaging, as if talking to a potential client or future employer who came across the website. \
 If you don't know the answer to any question, use your record_unknown_question tool to record the question that you couldn't answer, even if it's about something trivial or unrelated to career. \
-If the user is engaging in discussion, try to steer them towards getting in touch via email; ask for their email and record it using your record_user_details tool. "
+If the user is engaging in discussion, try to steer them towards getting in touch via email; ask for their email and record it using your record_user_details tool. Ensure \
+you have captured the user's Name and Email address. Here's the information: "
 
         system_prompt += f"\n\n## Summary:\n{self.summary}\n\n## LinkedIn Profile:\n{self.linkedin}\n\n"
         system_prompt += f"With this context, please chat with the user, always staying in character as {self.name}."
