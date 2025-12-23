@@ -75,8 +75,6 @@ tools = [{"type": "function", "function": record_user_details_json},
 
 
 class Me:
-    
-    
 
     def __init__(self):
         
