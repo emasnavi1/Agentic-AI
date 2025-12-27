@@ -111,3 +111,95 @@ async def main():
 
 asyncio.run(main())
 ```
+
+# Exmaple of a an Async Genertor and better underestand what Await does inside a functions
+
+```
+import asyncio
+
+# --- ACTOR 1: The Background Worker ---
+# This simulates a UI loading spinner, a database heartbeat, or another user request.
+async def background_worker():
+    while True:
+        print("  [Background] ⏳ While you wait, I am doing other work...")
+        await asyncio.sleep(1) # ticks every 1 second
+
+# --- ACTOR 2: The Slow AI (Your Streamer) ---
+# Note hos using the term `yield` is turning this method to an Async Generator
+# Async Generator (async def + yield): Yields Data to You (the programmer).
+# Custom Awaitable (def __await__ + yield): Yields Control to the Event Loop (the manager).
+# This is an example of Async Generator which can be un-wrapped using `async for``
+async def fake_ai_streamer(sentence):
+    words = sentence.split()
+
+    for word in words:
+        # THE PROOF IS HERE:
+        # We pause for 3 seconds.
+        # Because we use 'await asyncio.sleep', the Event Loop
+        # immediately switches to 'background_worker' during this time.
+        await asyncio.sleep(3)
+
+        yield "\n" + word + "\n"
+
+# --- THE STAGE (Main) ---
+async def main():
+    print("--- STARTING DEMO ---")
+
+
+
+    # 1. Start the Background Worker
+    # create_task schedules it to run on the loop immediately
+    # this goes to scheduler right away
+    task = asyncio.create_task(background_worker())
+
+    # this will make the main to pause here for 20 seconds. while allowing the prevously scheduled task (background_worker)
+    # to run, the line after this line will not be executed until this 20 second sleep is satisfied.
+    await asyncio.sleep(20)
+
+    print("🤖 AI is typing: ", end="", flush=True)
+
+    # 2. Run the Streamer
+    # The loop will toggle between this streamer and the background task
+    async for chunk in fake_ai_streamer("Agentic AI is the future of humanity"):
+        print(chunk, end="", flush=True)
+
+    # 3. Cleanup
+    print("\n✅ Done!")
+    task.cancel() # Stop the background worker
+
+# Run it
+await main()
+```
+
+# Another example in which I show how time.sleep(3) is used to represent a long running process
+
+```
+import asyncio
+import time
+
+# A standard, blocking function
+def distinct_blocking_read():
+    # Imagine this is: with open('big_file.txt') as f: return f.read()
+    time.sleep(3)
+    return "File Contents"
+
+async def background_worker():
+    while True:
+        print("  [Background] ⏳ I am alive!")
+        await asyncio.sleep(1)
+
+async def main():
+    task = asyncio.create_task(background_worker())
+
+    print("Starting threaded read...")
+
+    # MAGIC FIX: Run the blocking function in a thread
+    # The Event Loop stays free to run the background worker!
+    data = await asyncio.to_thread(distinct_blocking_read)
+
+    print(f"Finished reading: {data}")
+    task.cancel()
+
+# Result: The background worker keeps printing the whole time!
+await main()
+```
