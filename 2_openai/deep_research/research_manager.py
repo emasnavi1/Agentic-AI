@@ -20,13 +20,13 @@ class ResearchManager:
             search_results = await self.dispatch_searches(search_plan)
             yield "Searches complete, writing report..."
             report = await self.write_report(query, search_results)
-            yield "Report written, preparing email..."
-            email_content = await self.prepare_email(report.model_dump_json())
-            yield "Sending Email..."
+            # yield "Report written, preparing email..."
+            # email_content = await self.prepare_email(report.model_dump_json())
+            # yield "Sending Email..."
             # await self.send_email(email_content.model_dump_json())
             # yield "Email sent, research complete"
-            yield email_content.message_body
-        
+            # yield email_content.message_body
+            yield report.markdown_report
 
     async def plan_searches(self, query: str) -> WebSearchPlan:
         """ Plan the searches to perform for the query """

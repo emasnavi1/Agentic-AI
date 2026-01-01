@@ -15,7 +15,7 @@ with gr.Blocks(theme=gr.themes.Default(primary_hue="sky")) as ui:
     query_textbox = gr.Textbox(label="What topic would you like to research?")
     run_button = gr.Button("Run", variant="primary")
     gr.Markdown("# Output:")
-    report = gr.HTML(label="Report")
+    report = gr.Markdown(label="Report")
     
     run_button.click(fn=run, inputs=query_textbox, outputs=report, concurrency_limit=5)
     query_textbox.submit(fn=run, inputs=query_textbox, outputs=report, concurrency_limit=5)
