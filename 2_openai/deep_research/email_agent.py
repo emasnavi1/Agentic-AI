@@ -28,7 +28,7 @@ def send_html_email(subject: str, message_body: str):
         html=html_template,
         # 2. Tell Redmail where the file is
         body_images={
-            "my_logo": "../me/emasnavi.png" 
+            "my_logo": "./img/emasnavi.png" 
         }
     )
     return {"status": "success"}
