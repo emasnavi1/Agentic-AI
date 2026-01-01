@@ -17,8 +17,13 @@ with gr.Blocks(theme=gr.themes.Default(primary_hue="sky")) as ui:
     gr.Markdown("# Output:")
     report = gr.HTML(label="Report")
     
-    run_button.click(fn=run, inputs=query_textbox, outputs=report)
-    query_textbox.submit(fn=run, inputs=query_textbox, outputs=report)
+    run_button.click(fn=run, inputs=query_textbox, outputs=report, concurrency_limit=5)
+    query_textbox.submit(fn=run, inputs=query_textbox, outputs=report, concurrency_limit=5)
 
-ui.launch(inbrowser=True)
+# 2. Enable queuing and set max_threads in launch
+if __name__ == "__main__":
+    ui.queue().launch(
+        inbrowser=True,
+        max_threads=40  # Allows the underlying server to handle more simultaneous connections
+    )
 
