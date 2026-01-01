@@ -203,3 +203,11 @@ async def main():
 # Result: The background worker keeps printing the whole time!
 await main()
 ```
+
+# Good examplation for `asyncio.create_task(coro)
+
+```
+In Python's asyncio library, asyncio.create_task(coro) is the function used to schedule a coroutine to run concurrently on the event loop.
+
+Think of it like starting a job in the background. If you simply await a coroutine, your code stops and waits for that one job to finish before moving to the next line. With create_task, you submit the job to the "to-do list" of the event loop and immediately move to the next line of code.
+```
