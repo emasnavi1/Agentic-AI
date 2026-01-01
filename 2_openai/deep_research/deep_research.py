@@ -24,6 +24,7 @@ with gr.Blocks(theme=gr.themes.Default(primary_hue="sky")) as ui:
 if __name__ == "__main__":
     ui.queue().launch(
         inbrowser=True,
-        max_threads=40  # Allows the underlying server to handle more simultaneous connections
+        max_threads=40,
+        show_api=False# Allows the underlying server to handle more simultaneous connections
     )
 
