@@ -1,31 +1,39 @@
-import os
-from typing import Dict
-
-import sendgrid
-from sendgrid.helpers.mail import Email, Mail, Content, To
+from redmail import gmail
 from agents import Agent, function_tool
 
+INSTRUCTIONS = """You are able to send an emial."""
 
 @function_tool
-def send_email(subject: str, html_body: str) -> Dict[str, str]:
-    """Send an email with the given subject and HTML body"""
-    sg = sendgrid.SendGridAPIClient(api_key=os.environ.get("SENDGRID_API_KEY"))
-    from_email = Email("ed@edwarddonner.com")  # put your verified sender here
-    to_email = To("ed.donner@gmail.com")  # put your recipient here
-    content = Content("text/html", html_body)
-    mail = Mail(from_email, to_email, subject, content).get()
-    response = sg.client.mail.send.post(request_body=mail)
-    print("Email response", response.status_code)
-    return "success"
+def send_html_email(subject: str, message_body: str):
+    """ Send out an HTML email with an embedded image to all sales prospects """
 
+    html_template = f"""
+    <div style="font-family: Jost, sans-serif; padding: 20px;">
+        <h2>{subject}</h2>
+        <p>{message_body}</p>
+        <br>
+        <hr>
+        <img src="{{{{ my_logo.src }}}}" style="width: 150px;">
+    </div>
+    """
 
-INSTRUCTIONS = """You are able to send a nicely formatted HTML email based on a detailed report.
-You will be provided with a detailed report. You should use your tool to send one email, providing the 
-report converted into clean, well presented HTML with an appropriate subject line."""
+    gmail.username = "emasnavi1@gmail.com"
+    gmail.password = os.environ.get('GMAIL_APP_PASSWORD')
+    gmail.send(
+        subject=subject,
+        receivers=["ehsan.masnavi@gmail.com"],
+        # 1. Define the HTML with the special syntax
+        html=html_template,
+        # 2. Tell Redmail where the file is
+        body_images={
+            "my_logo": "./me/emasnavi.png" 
+        }
+    )
+    return {"status": "success"}
 
 email_agent = Agent(
-    name="Email agent",
+    name="Emailer agent",
     instructions=INSTRUCTIONS,
-    tools=[send_email],
-    model="gpt-4o-mini",
+    tools=[send_html_email],
+    model="gpt-4o-mini"
 )
