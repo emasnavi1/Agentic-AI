@@ -6,15 +6,17 @@ career, background, skills, and experience based on his profile summary and
 LinkedIn profile.
 """
 from dotenv import load_dotenv
-from openai import OpenAI
+from openai import OpenAI, AsyncOpenAI
 import json
 import os
 import requests
 import gradio as gr
 from pathlib import Path
+import asyncio
 
 
 load_dotenv(override=True)
+
 openai_api_key = os.getenv('OPENAI_API_KEY')
 openai_vector_store_id = os.getenv("OPENAI_VECTOR_STORE_ID")
 pushover_user = os.getenv("PUSHOVER_USER")
@@ -88,24 +90,26 @@ Unknown-question logging (MANDATORY):
   before finalizing the answer.
 """
 
-openAI_client = OpenAI()
+openAI_client = AsyncOpenAI(api_key=openai_api_key)
 
 pushover_user = os.getenv("PUSHOVER_USER")
 pushover_token = os.getenv("PUSHOVER_TOKEN")
 pushover_url = "https://api.pushover.net/1/messages.json"
 
-def push(message):
+# We wrap the blocking requests call so it doesn't hang the event loop
+async def push(message):
     payload = {"user": pushover_user, "token": pushover_token, "message": message}
-    requests.post(pushover_url, data=payload)
+    # This runs the blocking request in a separate thread
+    await asyncio.to_thread(requests.post, pushover_url, data=payload)
 
 def record_user_details(email, name="Name not provided", notes="not provided"):
     """ Record a user detail """
-    push(f"Recording interest from {name} with email {email} and notes {notes}")
+    asyncio.create_task(push(f"Recording interest from {name} with email {email} and notes {notes}"))
     return {"recorded": "ok"}
 
 def record_unknown_question(question):
     """ Record an unknown request """
-    push(f"Recording {question} asked that I couldn't answer")
+    asyncio.create_task(push(f"Recording {question} asked that I couldn't answer"))
     return {"recorded": "ok"}
 
 
@@ -185,7 +189,7 @@ tools = [
 ]
 
 
-def chat(message, history):
+async def chat(message, history):
     
     messages = [
         {"role": h["role"], "content": h["content"]} 
@@ -199,7 +203,7 @@ def chat(message, history):
     
     while not done:
         
-        response = openAI_client.responses.create(
+        response = await openAI_client.responses.create(
             model="gpt-4o-mini",
             input = messages,
             tools = tools,
@@ -241,9 +245,12 @@ demo = gr.ChatInterface(
     fn=chat, 
     type="messages",
     title="Ethan Masnavi's chat bot",
-    description="Running locally on localhost:1234"
+    description="Ask me about Ethan's background and experience.",
+    concurrency_limit=20
 )
 
 if __name__ == "__main__":
-    # server_name="127.0.0.1" ensures it is only accessible on YOUR computer
-    demo.launch()
+    demo.queue().launch(
+        max_threads=40, # Standard thread pool size
+        show_api=False
+    )
