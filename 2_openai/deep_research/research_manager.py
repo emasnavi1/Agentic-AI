@@ -3,6 +3,7 @@ from search_agent import search_agent
 from planner_agent import planner_agent, WebSearchItem, WebSearchPlan
 from writer_agent import writer_agent, ReportData
 from email_agent import email_agent
+from email_writer_agent import email_writer_agent, EmailContent
 import asyncio
 
 class ResearchManager:
@@ -16,13 +17,15 @@ class ResearchManager:
             print("Starting research...")
             search_plan = await self.plan_searches(query)
             yield "Searches planned, starting to search..."     
-            search_results = await self.perform_searches(search_plan)
+            search_results = await self.dispatch_searches(search_plan)
             yield "Searches complete, writing report..."
             report = await self.write_report(query, search_results)
-            yield "Report written, sending email..."
-            await self.send_email(report)
+            yield "Report written, preparing email..."
+            email_content = await self.prepare_email(report.model_dump_json())
+            yield "Sending Email..."
+            await self.send_email(email_content.model_dump_json())
             yield "Email sent, research complete"
-            yield report.markdown_report
+            yield email_content.message_body
         
 
     async def plan_searches(self, query: str) -> WebSearchPlan:
@@ -35,19 +38,22 @@ class ResearchManager:
         print(f"Will perform {len(result.final_output.searches)} searches")
         return result.final_output_as(WebSearchPlan)
 
-    async def perform_searches(self, search_plan: WebSearchPlan) -> list[str]:
-        """ Perform the searches to perform for the query """
+    async def dispatch_searches(self, search_plan: WebSearchPlan) -> list[str]:
+        """ Dispatch the searches to perform search for the query """
         print("Searching...")
-        num_completed = 0
+        # num_completed = 0
         tasks = [asyncio.create_task(self.search(item)) for item in search_plan.searches]
         results = []
-        for task in asyncio.as_completed(tasks):
-            result = await task
-            if result is not None:
-                results.append(result)
-            num_completed += 1
-            print(f"Searching... {num_completed}/{len(tasks)} completed")
-        print("Finished searching")
+        # for task in asyncio.as_completed(tasks):
+        #     result = await task
+        #     if result is not None:
+        #         results.append(result)
+        #     num_completed += 1
+        #     print(f"Searching... {num_completed}/{len(tasks)} completed")
+        # print("Finished searching")
+        raw_results = await asyncio.gather(*tasks)
+        results = [r for r in raw_results if r is not None]
+        print(f"Finished doing research. Did {len(results)} searches out of {len(search_plan.searches)} subjects.")
         return results
 
     async def search(self, item: WebSearchItem) -> str | None:
@@ -74,11 +80,18 @@ class ResearchManager:
         print("Finished writing report")
         return result.final_output_as(ReportData)
     
-    async def send_email(self, report: ReportData) -> None:
-        print("Writing email...")
+    async def prepare_email(self, report: ReportData) -> EmailContent:
+        """Prepare an email to be fed to te send email agent"""
+        print("Deciding about email subject and body, writing the email ...")
+        result = await Runner.run(email_writer_agent, report)
+        return result.final_output_as(EmailContent)
+        
+    
+    async def send_email(self, emailContent: EmailContent) -> None:
+        print("Sending the email...")
         result = await Runner.run(
             email_agent,
-            report.markdown_report,
+            emailContent,
         )
         print("Email sent")
-        return report
+        return

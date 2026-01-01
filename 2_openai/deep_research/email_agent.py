@@ -1,5 +1,7 @@
+import os
 from redmail import gmail
 from agents import Agent, function_tool
+
 
 INSTRUCTIONS = """You are able to send an emial."""
 
@@ -26,7 +28,7 @@ def send_html_email(subject: str, message_body: str):
         html=html_template,
         # 2. Tell Redmail where the file is
         body_images={
-            "my_logo": "./me/emasnavi.png" 
+            "my_logo": "../me/emasnavi.png" 
         }
     )
     return {"status": "success"}
