@@ -23,8 +23,8 @@ class ResearchManager:
             yield "Report written, preparing email..."
             email_content = await self.prepare_email(report.model_dump_json())
             yield "Sending Email..."
-            await self.send_email(email_content.model_dump_json())
-            yield "Email sent, research complete"
+            # await self.send_email(email_content.model_dump_json())
+            # yield "Email sent, research complete"
             yield email_content.message_body
         
 
